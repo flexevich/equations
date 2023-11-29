@@ -9,8 +9,13 @@ private:
 
 public:
     Equations();
+    Equations(int n);
     ~Equations();
     void wEquations();
     void print();
+    void slae_gauss();
+    double minor(int i, int j);
+    double det();
+    
 };
 #endif
