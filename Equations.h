@@ -10,6 +10,7 @@ private:
 public:
     Equations();
     Equations(int n);
+    Equations(const Equations& e);
     ~Equations();
     void wEquations();
     void print();

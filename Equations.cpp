@@ -18,6 +18,19 @@ Equations::Equations(int n)
     }
 }
 
+Equations::Equations(const Equations& e)
+{   
+    n = e.n;
+    array = new double* [n];
+    equally = new double[n];
+    for (int i = 0; i < n; i++)
+    {
+        array[i] = new double[n];
+        equally[i] = e.equally[i];
+        for (int j = 0; j < n; j++)
+            array[i][j] = e.array[i][j];
+    }
+};
 Equations::~Equations() {
     if (array != nullptr) {
         for (int i = 0; i < n; i++) {
@@ -65,68 +78,73 @@ void Equations::print() {
 
 void Equations::slae_gauss()
 {   
-    
     //создаём временные массивы, выделяем им память и заполняем соответственными элементами исходных массивов
-    double **var_a;
-    double *var_e;
-    var_a = new double*[n];
-    var_e = new double[n];
+    Equations vareq = *this;
     if (det()==0)
     {
-        cout << "det is equal to zero, the system either has no solutions, or there are an infinite number of them\n";
+        cout << "Determinant is equal to zero, the system either has no solutions, or there are an infinite number of them.\nTry another method.\n"; //тут я думаю всё понятно
         return;
     }
-    for (int i=0;i<n;i++)
-    {   
-        var_a[i] = new double[i];
-        for (int j=0;j<n;j++)
+
+    for (int oof=0;oof<n;oof++)//проверка чтобы бим бим бам бам по главной диагонали не был равен нулю, а если равен прибавим к нему другую строку где он не будет равен нулю
+    {
+        if (vareq.array[oof][oof] == 0)
         {
-            var_a[i][j] = array[i][j];
+            for (int oofi=0;oofi<n;oofi++)
+            {
+                if(vareq.array[oofi][oof]!=0)
+                {
+                    for(int oofj=0;oofj<n;oofj++)
+                    {
+                        vareq.array[oof][oofj] += vareq.array[oofi][oofj];
+                    }
+                    vareq.equally[oof] += vareq.equally[oofi];
+                    break;
+                }
+            }
         }
-        var_e[i] = equally[i];
     }
+    for (int u = n - 1; u > 0; u--)//перемещаем строки чтобы исключить деление на ноль и всякую беду ящеров
+    {
+        if (vareq.array[u - 1][0] < vareq.array[u][0])
+        {
+            for (int v = 0; v < n; v++)
+            {
+                double temp = vareq.array[u][v];
+                vareq.array[u][v] = vareq.array[u - 1][v];
+                vareq.array[u - 1][v] = temp;
+            }
+            double temp = vareq.equally[u];
+            vareq.equally[u] = vareq.equally[u - 1];
+            vareq.equally[u - 1] = temp;
+        }
+    }
+    Equations var_one = vareq;
     //зануление нижнего левого угла матрицы
     for (int k = 0; k < n; k++)
     {
-        if (fabs(array[k][k]) < 0.00000001)
-        {   
-            for(int i=0;i<n;i++)
-            {   
-                auto ij = 0;
-                for (int j=0;j<n;j++)
-                {
-                    ij += array[i][j];
-                    if (ij == 0&& equally[i]!=0)
-                    {
-                        cout << "there is no solutions "<<ij<<"!="<<equally[i]<<"\n";
-                        return;
-                    }
-                }
-            }
-            
-            return;
-        }
+        
         for (int i = 0; i < n; i++) //нормируем элементы строки k - делим на первый ненулевой элемент строки
-            var_a[k][i] = var_a[k][i]/array[k][k];
-        var_e[k] = var_e[k]/array[k][k];
+            var_one.array[k][i] = var_one.array[k][i]/ vareq.array[k][k];
+        var_one.equally[k] = var_one.equally[k]/ vareq.array[k][k];
 
         for (int i = k + 1; i < n; i++) // i - следующая строка после строки k
         {
-            double var_coeff = var_a[i][k]/var_a[k][k];
+            double var_coeff = var_one.array[i][k]/ var_one.array[k][k];
             for (int j = 0; j < n; j++)
             {
-                var_a[i][j] = var_a[i][j]- var_a[k][j] * var_coeff;
+                var_one.array[i][j] = var_one.array[i][j]- var_one.array[k][j] * var_coeff;
             }
-            var_e[i] = var_e[i]- var_coeff * var_e[k];
+            var_one.equally[i] = var_one.equally[i]- var_coeff * var_one.equally[k];
         }
         
         for (int i = 0; i < n; i++)
         {
             for (int j = 0; j < n; j++)
             {
-                array[i][j] = var_a[i][j];
+                vareq.array[i][j] = var_one.array[i][j];
             }
-            equally[i] = var_e[i];
+            vareq.equally[i] = var_one.equally[i];
         }
 
     }
@@ -134,46 +152,34 @@ void Equations::slae_gauss()
     //зануление верхнего нижнего угла матрицы (обратная операция)
     for (int k=n-1;k>=0;k--)
     {
-        if (fabs(array[k][k]) < 0.00000001)
-        {
-            for (int i = 0; i < n; i++)
-            {
-                auto ij = 0;
-                for (int j = 0; j < n; j++)
-                {
-                    ij += array[i][j];
-                    if (ij == 0 && equally[i] != 0)
-                    {
-                        cout << "there is no solutions " << ij << "!=" << equally[i]<<"\n";
-                        return;
-                    }
-                }
-            }
-            return;
-        }
         for (int i = n - 1; i >= 0; i--)
-            var_a[k][i] = var_a[k][i] / array[k][k];
-        var_e[k] = var_e[k] / array[k][k];
+            var_one.array[k][i] = var_one.array[k][i] / vareq.array[k][k];
+        var_one.equally[k] = var_one.equally[k] / vareq.array[k][k];
         
         for (int i=k-1;i>=0;i--)
         {
-            double var_coeff = var_a[i][k] / var_a[k][k];
+            double var_coeff = var_one.array[i][k] / var_one.array[k][k];
             for (int j = n - 1; j >= 0; j--)
             {
-                var_a[i][j] = var_a[i][j] - var_a[k][j] * var_coeff;
+                var_one.array[i][j] = var_one.array[i][j] - var_one.array[k][j] * var_coeff;
             }
-            var_e[i] = var_e[i] - var_e[k] * var_coeff;
+            var_one.equally[i] = var_one.equally[i] - var_one.equally[k] * var_coeff;
         }
         
         for (int i = 0; i < n; i++)
         {
             for (int j = 0; j < n; j++)
             {
-                array[i][j] = var_a[i][j];
+                vareq.array[i][j] = var_one.array[i][j];
             }
-            equally[i] = var_e[i];
+            vareq.equally[i] = var_one.equally[i];
         }
         
+    }
+    cout << "Solution:\n";
+    for (int i=0;i<n;i++)
+    {
+        cout << "x" << i+1 << " = " << vareq.equally[i] << "\n";
     }
 }
 double Equations::minor(int i,int j)

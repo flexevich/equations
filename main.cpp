@@ -4,6 +4,5 @@ int main() {
     eq.wEquations();
     eq.print();
     eq.slae_gauss();
-    eq.print();
     return 0;
 }
