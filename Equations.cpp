@@ -74,6 +74,7 @@ void Equations::slae_gauss()
     if (det()==0)
     {
         cout << "det is equal to zero, the system either has no solutions, or there are an infinite number of them\n";
+        return;
     }
     for (int i=0;i<n;i++)
     {   
